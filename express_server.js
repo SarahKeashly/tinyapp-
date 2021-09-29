@@ -35,7 +35,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
@@ -58,13 +58,23 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n")
 });
 
+app.post("/urls/:id", (req, res) => {
+  const shortURL = req.params.id; // holds the short id
+  const longURL = req.body.longURL
+  console.log("SOME", longURL);
+
+  res.redirect("/urls");
+
+});
+
+
 
 //delete
 app.post("/urls/:shortURL/delete", (req, res) => {
   const templateVars = req.params.shortURL;
-  console.log(templateVars);
+
   delete urlDatabase[templateVars];
-  console.log('here');
+
   res.redirect("/urls");
 
 })
