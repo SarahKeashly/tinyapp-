@@ -99,6 +99,7 @@ app.get("/register", (req, res) => {
 
 //Login
 app.get("/login", (req, res) => {
+  console.log("/login.get");
   const templateVars = { user: users[req.cookies["username_id"]] }
 
   res.render("login", templateVars)
@@ -107,7 +108,7 @@ app.get("/login", (req, res) => {
 
 
 
-// POST
+///////////////////////// POST
 
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
@@ -168,18 +169,38 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 })
 
-//login - Wonky - refactor later
+//login 
 
-// app.post("/login", (req, res) => {
-//   const username = req.body.username;
-//   res.cookie("username", username);
-//   res.redirect("/urls");
-// })
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const user = findUserByEmail(email);
 
 
-//logout - wonky - refactor later
+
+
+  // if that user exists with that email
+  if (!user) {
+    return res.status(403).send('No user with that email was found');
+  }
+
+  // does the password provided from the request
+  // match the password of the user
+  if (user.password !== password) {
+    return res.status(403).send('Passwords did not match')
+  }
+  console.log("user", user.id)
+  res.cookie("username_id", user.id);
+
+
+  res.redirect("/urls");
+})
+
+
+//logout 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username", req.body.username);
+  res.clearCookie("username_id")
   res.redirect("/urls");
 });
 
