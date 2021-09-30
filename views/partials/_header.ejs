@@ -23,8 +23,8 @@
 
     <div class="d-flex justify-content-center">
 
-      <% if(username){ %>
-        <span> Logged in As: <%= username %>!</span>
+      <% if(user){ %>
+        <span> Logged in As: <%= user.email %>!</span>
 
         <form class="form-inline" action="/logout" method="POST">
           <button type="submit" class="btn btn-outline-dark">Logout</button>
