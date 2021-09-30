@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8090; // default port 8080
 
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
@@ -14,7 +14,7 @@ const generateRandomString = function() {
 
 app.set("view engine", "ejs");
 
-//USERS
+//USERS  - current string that is the username key - req.cookies["username_id"
 
 const users = {
   "userRandomID": {
@@ -49,9 +49,20 @@ const urlDatabase = {
 //Get
 
 app.get("/urls/new", (req, res) => {
+
+  const userId = req.cookies["username_id"]; //a way to test if there is a username at req.cookies
+
+
+  // if that user exists with that email
+  if (!userId) {
+    return res.status(401).send('You do not have access to this page');
+  };
+
   const templateVars = { user: users[req.cookies["username_id"]] };
   res.render("urls_new", templateVars);
 });
+
+
 
 app.get("/urls", (req, res) => {
   console.log("cookies", req.cookies);
@@ -150,7 +161,6 @@ app.post('/register', (req, res) => {
     email: email,
     password: password
   }
-  console.log("users:", users);
 
   res.cookie("username_id", id);
 
@@ -178,8 +188,6 @@ app.post("/login", (req, res) => {
   const user = findUserByEmail(email);
 
 
-
-
   // if that user exists with that email
   if (!user) {
     return res.status(403).send('No user with that email was found');
@@ -203,9 +211,6 @@ app.post("/logout", (req, res) => {
   res.clearCookie("username_id")
   res.redirect("/urls");
 });
-
-
-
 
 
 
