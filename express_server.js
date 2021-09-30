@@ -5,6 +5,8 @@ const PORT = 8080; // default port 8080
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const generateRandomString = function() {
   return Math.random().toString(20).substr(2, 6)
@@ -12,32 +14,49 @@ const generateRandomString = function() {
 
 app.set("view engine", "ejs");
 
+//USERS
+
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "abc"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "1234"
+  }
+}
+
+const findUserByEmail = (email) => {
+  for (const userId in users) {
+    const user = users[userId];
+    if (user.email === email) {
+      return user;
+    }
+  }
+  return null;
+}
+
+
+//URL Database of shortURL (key), value is long URL
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({ extended: true }));
-
-
-app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  const randomShortUrl = generateRandomString();
-  urlDatabase[randomShortUrl] = req.body.longURL;
-  res.redirect(`/urls/${randomShortUrl}`);       // Respond with 'randomshortURL' (we will replace this)
-});
-
+//Get
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const templateVars = { user: users[req.cookies["username_id"]] };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls", (req, res) => {
   console.log("cookies", req.cookies);
 
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  const templateVars = { urls: urlDatabase, user: users[req.cookies["username_id"]] };
 
   res.render("urls_index", templateVars);
 
@@ -45,7 +64,7 @@ app.get("/urls", (req, res) => {
 
 //getting the short URL
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["username_id"]] };
   res.render("urls_show", templateVars);
 });
 
@@ -68,6 +87,26 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n")
 });
 
+
+//Register
+app.get("/register", (req, res) => {
+  const templateVars = { user: users[req.cookies["username_id"]] }
+
+  res.render("register", templateVars)
+
+});
+
+
+
+// POST
+
+app.post("/urls", (req, res) => {
+  console.log(req.body);  // Log the POST request body to the console
+  const randomShortUrl = generateRandomString();
+  urlDatabase[randomShortUrl] = req.body.longURL;
+  res.redirect(`/urls/${randomShortUrl}`);       // Respond with 'randomshortURL' 
+});
+
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id; // holds the short id
   const longURL = req.body.longURL
@@ -77,6 +116,33 @@ app.post("/urls/:id", (req, res) => {
 
 });
 
+//REGISTER
+app.post('/register', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+
+  //check to see if email exists in the database
+  const user = findUserByEmail(email);
+
+  if (user) {
+    return res.status(400).send('user with that email currently exists - (change later)')
+  }
+
+  const id = generateRandomString();
+
+  users[id] = {
+    id: id,
+    email: email,
+    password: password
+  }
+  console.log("users:", users);
+
+  res.cookie("username_id", id);
+
+  res.redirect("/urls")
+
+});
 
 
 //delete
@@ -88,7 +154,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 
 })
-//login
+
+//login - Wonky - refactor later
 
 app.post("/login", (req, res) => {
   const username = req.body.username;
@@ -98,11 +165,17 @@ app.post("/login", (req, res) => {
 
 
 
-//logout
+
+//logout - wonky - refactor later
 app.post("/logout", (req, res) => {
   res.clearCookie("username", req.body.username);
   res.redirect("/urls");
 });
+
+
+
+
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
