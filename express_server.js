@@ -97,6 +97,15 @@ app.get("/register", (req, res) => {
 });
 
 
+//Login
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies["username_id"]] }
+
+  res.render("login", templateVars)
+
+});
+
+
 
 // POST
 
@@ -121,12 +130,16 @@ app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
+  //check to see if e-mail or password are blank
+  if (!email || !password) {
+    return res.status(400).send("email or password cannot be blank");
+  }
 
   //check to see if email exists in the database
   const user = findUserByEmail(email);
 
   if (user) {
-    return res.status(400).send('user with that email currently exists - (change later)')
+    return res.status(400).send('This username is unavailable')
   }
 
   const id = generateRandomString();
@@ -157,13 +170,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //login - Wonky - refactor later
 
-app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
-  res.redirect("/urls");
-})
-
-
+// app.post("/login", (req, res) => {
+//   const username = req.body.username;
+//   res.cookie("username", username);
+//   res.redirect("/urls");
+// })
 
 
 //logout - wonky - refactor later
