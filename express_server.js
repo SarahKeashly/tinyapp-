@@ -1,14 +1,19 @@
 const express = require("express");
 const app = express();
 const PORT = 8090; // default port 8080
-
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
-
+// const cookieParser = require('cookie-parser');
+// app.use(cookieParser());
+const bcrypt = require('bcryptjs');
+const cookieSession = require('cookie-session')
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const bcrypt = require('bcryptjs');
+
+app.use(cookieSession({
+  name: 'cookiemonster',
+  keys: ['my secret key', 'yet another secret key']
+}));
+
 
 
 const generateRandomString = function() {
@@ -100,7 +105,7 @@ const getUrlsForUser = function(id) {
 //Get
 
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies["username_id"]; //a way to test if there is a username at req.cookies
+  const userId = req.session.user_id; //a way to test if there is a username at req.cookies
 
 
   // if that user exists with that email
@@ -109,7 +114,7 @@ app.get("/urls/new", (req, res) => {
   };
 
 
-  const templateVars = { user: users[req.cookies["username_id"]] };
+  const templateVars = { user: users[req.session.user_id] };
   res.render("urls_new", templateVars);
 });
 
@@ -117,7 +122,8 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls", (req, res) => {
   // console.log("cookies", req.cookies["username_id"]);
-  const userID = req.cookies["username_id"];
+  const userID = req.session.user_id;
+  // console.log('username_id', user_id);
   // console.log("userNameinsideURLS", userID);
   const urls = getUrlsForUser(userID);
   // console.log("urls for the user", urls);
@@ -131,7 +137,7 @@ app.get("/urls", (req, res) => {
 //getting the short URL
 app.get("/urls/:shortURL", (req, res) => {
   // console.log(res);
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["username_id"]] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.session.user_id] };
 
   // console.log("short", urlDatabase[username_id]);
 
@@ -161,7 +167,7 @@ app.get("/hello", (req, res) => {
 
 //Register
 app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.cookies["username_id"]] }
+  const templateVars = { user: users[req.session.user_id] }
 
   res.render("register", templateVars)
 
@@ -171,7 +177,7 @@ app.get("/register", (req, res) => {
 //Login
 app.get("/login", (req, res) => {
   // console.log("/login.get");
-  const templateVars = { user: users[req.cookies["username_id"]] }
+  const templateVars = { user: users[req.session.user_id] }
 
   res.render("login", templateVars)
 
@@ -185,7 +191,7 @@ app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
   const randomShortUrl = generateRandomString();
   const longURL = req.body.longURL;
-  urlDatabase[randomShortUrl] = { longURL, userID: req.cookies["username_id"] };
+  urlDatabase[randomShortUrl] = { longURL, userID: req.session.user_id };
 
   res.redirect(`/urls/${randomShortUrl}`);       // Respond with 'randomshortURL' 
 });
@@ -228,7 +234,9 @@ app.post('/register', (req, res) => {
   ///SHOWS THE PASSWORD COMING IN AS A HASH
   console.log(users[id]);
 
-  res.cookie("username_id", id);
+  req.session.user_id = id;
+
+  //res.cookie("username_id", id);
 
 
   res.redirect("/urls")
@@ -267,16 +275,18 @@ app.post("/login", (req, res) => {
   // does the password provided from the request
   // match the password of the user
 
+  //variable for comparing the password via reverse encryption
   const passwordBcrypt = bcrypt.compareSync(password, user.password);
+
   if (!passwordBcrypt) {
     return res.status(403).send(`Passwords did not match <a href= '/login'>Login</a>`)
   }
-  // console.log("user", user.id)
 
 
 
-  res.cookie("username_id", user.id);
 
+  // res.cookie("username_id", user.id);
+  req.session.user_id = user.id;
 
   res.redirect("/urls");
 })
@@ -284,8 +294,8 @@ app.post("/login", (req, res) => {
 
 //logout 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username_id")
-  // req.cookie = null;
+  // res.clearCookie("username_id")
+  req.session = null;
   res.redirect("/urls");
 });
 
