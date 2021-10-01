@@ -4,6 +4,7 @@ const PORT = 8090; // default port 8080
 // const cookieParser = require('cookie-parser');
 // app.use(cookieParser());
 const bcrypt = require('bcryptjs');
+const findUserByEmail = require('./helpers') ////
 const cookieSession = require('cookie-session')
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -55,15 +56,7 @@ const users = {
 // }
 
 
-const findUserByEmail = (email, database) => {
-  for (const userId in database) {
-    const user = database[userId];
-    if (user.email === email) {
-      return user;
-    }
-  }
-  return null;
-}
+
 
 
 //URL Database of shortURL (key), value is long URL
@@ -228,7 +221,8 @@ app.post('/register', (req, res) => {
   }
 
   //check to see if email exists in the database
-  const user = findUserByEmail(email, users);
+  // const user = findUserByEmail(email, users);
+  const user = findUserByEmail();
 
   if (user) {
     return res.status(400).send('This username is unavailable')
@@ -271,7 +265,9 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  const user = findUserByEmail(email);
+  // const user = findUserByEmail(email, database);
+
+  const user = findUserByEmail();
 
   console.log("USER", user);
 
