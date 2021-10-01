@@ -44,9 +44,20 @@ const users = {
 };
 
 
-const findUserByEmail = (email) => {
-  for (const userId in users) {
-    const user = users[userId];
+// const findUserByEmail = (email) => {
+//   for (const userId in users) {
+//     const user = users[userId];
+//     if (user.email === email) {
+//       return user;
+//     }
+//   }
+//   return null;
+// }
+
+
+const findUserByEmail = (email, database) => {
+  for (const userId in database) {
+    const user = database[userId];
     if (user.email === email) {
       return user;
     }
@@ -217,7 +228,7 @@ app.post('/register', (req, res) => {
   }
 
   //check to see if email exists in the database
-  const user = findUserByEmail(email);
+  const user = findUserByEmail(email, users);
 
   if (user) {
     return res.status(400).send('This username is unavailable')
