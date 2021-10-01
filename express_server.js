@@ -27,7 +27,8 @@ const users = {
     email: "user2@example.com",
     password: "1234"
   }
-}
+};
+
 
 const findUserByEmail = (email) => {
   for (const userId in users) {
@@ -41,15 +42,55 @@ const findUserByEmail = (email) => {
 
 
 //URL Database of shortURL (key), value is long URL
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
+
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW"
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW"
+  },
+  a3BoGr: {
+    longURL: "https://www.yahoo.ca",
+    userID: "1234"
+  }
+
 };
+
+//create a function
+//that returns an object
+//with all the urls that belong to a user
+
+const getUrlsForUser = function(id) {
+  const results = {};
+  const keys = Object.keys(urlDatabase);
+  console.log(`this is the keys ${keys}`);
+  console.log("urldatabase", urlDatabase);
+  console.log("id", id);
+  for (let shortURL in urlDatabase) {
+    // console.log(`this is the shortURL ${shortURL}`);
+    // const url = urlDatabase[keys]["longURL"];
+    // console.log(`this is the url ${url}`);
+
+    if (urlDatabase[shortURL].userID === id) {
+      results[shortURL] = urlDatabase[shortURL];
+    }
+  }
+
+  return results;
+
+}
 
 //Get
 
 app.get("/urls/new", (req, res) => {
-
   const userId = req.cookies["username_id"]; //a way to test if there is a username at req.cookies
 
 
@@ -58,6 +99,7 @@ app.get("/urls/new", (req, res) => {
     return res.status(401).send('You do not have access to this page');
   };
 
+
   const templateVars = { user: users[req.cookies["username_id"]] };
   res.render("urls_new", templateVars);
 });
@@ -65,9 +107,13 @@ app.get("/urls/new", (req, res) => {
 
 
 app.get("/urls", (req, res) => {
-  console.log("cookies", req.cookies);
-
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["username_id"]] };
+  console.log("cookies", req.cookies["username_id"]);
+  const userID = req.cookies["username_id"];
+  console.log("userNameinsideURLS", userID);
+  const urls = getUrlsForUser(userID);
+  console.log("urls for the user", urls);
+  console.log("users", users);
+  const templateVars = { urls: urls, user: users[userID] };
 
   res.render("urls_index", templateVars);
 
@@ -75,13 +121,18 @@ app.get("/urls", (req, res) => {
 
 //getting the short URL
 app.get("/urls/:shortURL", (req, res) => {
+  console.log(res);
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["username_id"]] };
+
+  // console.log("short", urlDatabase[username_id]);
+
   res.render("urls_show", templateVars);
 });
 
 
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
+  console.log("SHORT", req.params.shortURL)
   const longURL = urlDatabase[shortURL];
   res.redirect(longURL);
 })
@@ -124,7 +175,9 @@ app.get("/login", (req, res) => {
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
   const randomShortUrl = generateRandomString();
-  urlDatabase[randomShortUrl] = req.body.longURL;
+  const longURL = req.body.longURL;
+  urlDatabase[randomShortUrl] = { longURL, userID: req.cookies["username_id"] };
+
   res.redirect(`/urls/${randomShortUrl}`);       // Respond with 'randomshortURL' 
 });
 
@@ -144,7 +197,7 @@ app.post('/register', (req, res) => {
 
   //check to see if e-mail or password are blank
   if (!email || !password) {
-    return res.status(400).send("email or password cannot be blank");
+    return res.status(400).send("email or password cannot be blank<a href= '/login'>Login</a>");
   }
 
   //check to see if email exists in the database
@@ -190,7 +243,7 @@ app.post("/login", (req, res) => {
 
   // if that user exists with that email
   if (!user) {
-    return res.status(403).send('No user with that email was found');
+    return res.status(403).send("No user with that email was found.<a href= '/login'>Login</a>");
   }
 
   // does the password provided from the request
