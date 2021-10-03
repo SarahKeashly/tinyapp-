@@ -27,7 +27,7 @@ describe('findUserByEmail', function() {
 
 
   it('should test that a non-existent email returns undefined ', function() {
-    const user = findUserByEmail("jacob@example.com", testUsers)
+    const user = findUserByEmail("jacob@example.com", testUsers);
     const expectedOutput = undefined;
 
 
