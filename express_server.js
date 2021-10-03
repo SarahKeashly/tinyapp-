@@ -1,10 +1,9 @@
 const express = require("express");
 const app = express();
 const PORT = 8090; // default port 8080
-// const cookieParser = require('cookie-parser');
-// app.use(cookieParser());
 const bcrypt = require('bcryptjs');
-const findUserByEmail = require('./helpers') ////
+
+const findUserByEmail = require('./helpers')
 const cookieSession = require('cookie-session')
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -19,13 +18,13 @@ app.use(cookieSession({
 
 const generateRandomString = function() {
   return Math.random().toString(20).substr(2, 6)
-}
+};
 
 app.set("view engine", "ejs");
 
 
 
-//USERS  - current string that is the username key - req.cookies["username_id"
+////USERS 
 
 const hashedPasswordUser1 = bcrypt.hashSync("abc", 10);
 const hashedPasswordUser2 = bcrypt.hashSync("1234", 10);
@@ -45,6 +44,7 @@ const users = {
 };
 
 
+////URL DATABASE
 
 const urlDatabase = {
   b6UTxQ: {
@@ -73,15 +73,13 @@ const getUrlsForUser = function(id) {
     if (urlDatabase[shortURL].userID === id) {
       results[shortURL] = urlDatabase[shortURL];
     }
-  }
+  };
 
   return results;
 
 }
 
-
-
-/////////////GET
+/////////////GET/////////////////////
 
 
 // New short Url
@@ -100,41 +98,32 @@ app.get("/urls/new", (req, res) => {
 });
 
 
-
+// Getting long/short urls
 app.get("/urls", (req, res) => {
-  // console.log("cookies", req.cookies["username_id"]);
+
   const userID = req.session.user_id;
   console.log('userID', req.session.user_id);
 
-  // if (!userID) {
-  //   return res.status(401).send("You do not have access to this page. Please<a href= '/login'>Login</a>");
-  // };
-  // console.log("userNameinsideURLS", userID);
   const urls = getUrlsForUser(userID);
-  // console.log("urls for the user", urls);
-  // console.log("users", users);
+
   const templateVars = { urls: urls, user: users[userID] };
 
   res.render("urls_index", templateVars);
 
 });
 
+
 //getting the short URL
 app.get("/urls/:id", (req, res) => {
-  // console.log(res);
   const userID = req.session.user_id;
 
 
-  //copy paste - 127 - 136 in other areas with same logic requirements as per notes list
-  /// CHECK STATUS CODE 
   if (!userID) {
-    return res.status(401).send('You do not have access, please login')
+    return res.status(401).send('You do not have access, please login');
   }
 
-  //copy paste - 127 - 136 in other areas with same logic requirements as per notes list
-  //if someone is trying to access someone else's shortURL
   if (userID !== urlDatabase[req.params.id].userID) {
-    return res.status(403).send('You do not have access')
+    return res.status(403).send('You do not have access');
   }
 
   const templateVars = {
@@ -143,15 +132,12 @@ app.get("/urls/:id", (req, res) => {
     user: users[userID]
   };
 
-  // console.log("short", urlDatabase[username_id]);
-
   res.render("urls_show", templateVars);
 });
 
 
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  // console.log("SHORT", req.params.shortURL)
   const longURL = urlDatabase[shortURL].longURL;
   res.redirect(longURL);
 })
@@ -165,25 +151,24 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n")
+  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 
 //Register
 app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.session.user_id] }
+  const templateVars = { user: users[req.session.user_id] };
 
-  res.render("register", templateVars)
+  res.render("register", templateVars);
 
 });
 
 
 //Login
 app.get("/login", (req, res) => {
-  // console.log("/login.get");
-  const templateVars = { user: users[req.session.user_id] }
+  const templateVars = { user: users[req.session.user_id] };
 
-  res.render("login", templateVars)
+  res.render("login", templateVars);
 
 });
 
@@ -205,18 +190,16 @@ app.post("/urls", (req, res) => {
 ///
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id; // holds the short id
-  const longURL = req.body.longURL
+  const longURL = req.body.longURL;
   const userID = req.session.user_id;
-  // console.log("SOME", longURL);
+
 
   if (!userID) {
-    return res.status(401).send('You do not have access, please login')
+    return res.status(401).send('You do not have access, please login');
   }
 
-  //copy paste - 127 - 136 in other areas with same logic requirements as per notes list
-  //if someone is trying to access someone else's shortURL
   if (userID !== urlDatabase[req.params.id].userID) {
-    return res.status(403).send('You do not have access')
+    return res.status(403).send('You do not have access');
   }
 
   urlDatabase[shortURL].longURL = longURL;
@@ -237,9 +220,6 @@ app.post('/register', (req, res) => {
     return res.status(400).send("email or password cannot be blank <a href= '/register'>Register</a>");
   }
 
-  //check to see if id exists in the database
-  const user = findUserByEmail(email, users);
-
   //check to see if email exists in the database
   const userId = users['userRandomID'].email || users['user2RandomID'].email;
 
@@ -257,14 +237,12 @@ app.post('/register', (req, res) => {
   }
 
   ///SHOWS THE PASSWORD COMING IN AS A HASH
-  console.log(users[id]);
+  // console.log(users[id]);
 
   req.session.user_id = id;
 
-  //res.cookie("username_id", id);
 
-
-  res.redirect("/urls")
+  res.redirect("/urls");
 
 });
 
@@ -285,13 +263,7 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  // const user = findUserByEmail(email, database);
-
   const userID = findUserByEmail(email, users);
-
-  // console.log("USER", user);
-
-
 
   // if that user exists with that email
   if (!userID) {
@@ -309,19 +281,12 @@ app.post("/login", (req, res) => {
   // does the password provided from the request
   // match the password of the user
 
-  //variable for comparing the password via reverse encryption
-
   const passwordBcrypt = bcrypt.compareSync(password, user.password);
-
 
   if (!passwordBcrypt) {
     return res.status(403).send(`Passwords did not match <a href= '/login'>Login</a>`)
   }
 
-
-
-
-  // res.cookie("username_id", user.id);
   req.session.user_id = user.id;
 
   res.redirect("/urls");
@@ -330,7 +295,6 @@ app.post("/login", (req, res) => {
 
 //logout 
 app.post("/logout", (req, res) => {
-  // res.clearCookie("username_id")
   req.session = null;
   res.redirect("/urls");
 });
