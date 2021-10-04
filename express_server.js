@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const PORT = 8090; // default port 8080
+const PORT = 8090;
 const bcrypt = require('bcryptjs');
 
 const findUserByEmail = require('./helpers')
@@ -85,11 +85,13 @@ const getUrlsForUser = function(id) {
 // New short Url
 app.get("/urls/new", (req, res) => {
   const userId = req.session.user_id;
+  const user = users[userId];
 
 
   // if that user exists with that email
-  if (!userId) {
-    return res.status(401).send("You do not have access to this page. Please<a href= '/login'>Login</a>");
+  if (!userId || !user) {
+    res.redirect("/login");
+    return;
   };
 
 
@@ -97,16 +99,22 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-
 // Getting long/short urls
 app.get("/urls", (req, res) => {
 
+
   const userID = req.session.user_id;
-  console.log('userID', req.session.user_id);
+  const user = users[userID]
+
+  if (!userID || !user) {
+    return res.status(401).send("You do not have access to this page. Please <a href= '/login'>Login</a>");
+
+  }
+
 
   const urls = getUrlsForUser(userID);
 
-  const templateVars = { urls: urls, user: users[userID] };
+  const templateVars = { urls, user };
 
   res.render("urls_index", templateVars);
 
@@ -142,8 +150,17 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 })
 
+
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userID = req.session.user_id;
+
+  if (!userID || !users[userID]) {
+    res.redirect("/login");
+    return;
+  }
+
+  res.redirect("/urls");
+
 });
 
 app.get("/urls.json", (req, res) => {
@@ -179,7 +196,6 @@ app.get("/login", (req, res) => {
 
 //posting the new shortUrl's ito a page
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
   const randomShortUrl = generateRandomString();
   const longURL = req.body.longURL;
   urlDatabase[randomShortUrl] = { longURL, userID: req.session.user_id };
@@ -203,17 +219,18 @@ app.post("/urls/:id", (req, res) => {
   }
 
   urlDatabase[shortURL].longURL = longURL;
-  console.log("ShortURL");
 
   res.redirect("/urls");
 
 });
 
+
+
 //REGISTER
 app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const hashedPassword = bcrypt.hashSync(password, 10);
+
 
   //check to see if e-mail or password are blank
   if (!email || !password) {
@@ -221,12 +238,15 @@ app.post('/register', (req, res) => {
   }
 
   //check to see if email exists in the database
-  const userId = users['userRandomID'].email || users['user2RandomID'].email;
+  // const userId = users['userRandomID'].email || users['user2RandomID'].email;
+  const userId = findUserByEmail(email, users);
 
   // if that user exists with that email
-  if (email === userId) {
+  if (userId) {
     return res.status(401).send("This username is already in use.");
   };
+
+  const hashedPassword = bcrypt.hashSync(password, 10);
 
   const id = generateRandomString();
 
@@ -236,8 +256,6 @@ app.post('/register', (req, res) => {
     password: hashedPassword
   }
 
-  ///SHOWS THE PASSWORD COMING IN AS A HASH
-  // console.log(users[id]);
 
   req.session.user_id = id;
 
